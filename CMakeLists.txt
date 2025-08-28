@@ -54,6 +54,7 @@ set(CORE_HEADERS
 )
 
 set(CORE_SOURCES
+        src/grid2D.h
         # Future source files will be added here if headers have implementations:
         # src/Grid2D.cpp
         # src/Phi2D.cpp

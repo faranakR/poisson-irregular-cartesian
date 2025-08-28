@@ -137,12 +137,9 @@ int main() {
     
     // 7. Output results
     // solver.save_vtk("heat_solution.vtk");
-    
-    std::cout << "Array2D class is ready. Running basic tests...\n";
-    
-    // Basic test of Array2D
-    Array2D<double> A(3, 3, 1.0);
-    std::cout << "Test matrix A (3x3, filled with 1.0):\n" << A << "\n";
+
+    auto i{std::round(0.6/0.25)};
+    std::cout << i << "vs" << (0.6/0.25) << "\n";
     
     return 0;
 }
