@@ -1,0 +1,27 @@
+# CLion / IntelliJ
+.idea/
+cmake-build-*/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+CTestTestfile.cmake
+install_manifest.txt
+_compile_commands.json
+Makefile
+cmake_install.cmake
+
+# OS
+.DS_Store
+
+# Binary artifacts
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.exe
+
