@@ -15,7 +15,7 @@
 #include <cmath>
 #include <complex>
 #include <cassert>
-#include "src/Array2D.h"
+#include "../src/Array2D.h"
 
 // Helper function to check floating point equality
 template<typename T>

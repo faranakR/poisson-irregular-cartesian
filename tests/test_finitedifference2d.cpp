@@ -6,9 +6,9 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
-#include "src/FiniteDifference2D.h"
-#include "src/Grid2D.h"
-#include "src/Array2D.h"
+#include "../src/FiniteDifference2D.h"
+#include "../src/Grid2D.h"
+#include "../src/Array2D.h"
 
 template<typename T>
 bool approx_equal(T a, T b, T tol = 1e-10) {

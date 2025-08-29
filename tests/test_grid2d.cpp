@@ -10,7 +10,7 @@
 #include <cmath>
 #include <cassert>
 
-#include "src/Grid2D.h"
+#include "../src/Grid2D.h"
 
 // Helper functions to check equality of floating-point types
 template<typename T>

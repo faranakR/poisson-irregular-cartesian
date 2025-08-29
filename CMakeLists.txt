@@ -55,9 +55,9 @@ set(CORE_HEADERS
 
 set(CORE_SOURCES
         src/grid2D.h
-        test_grid2d.cpp
+        tests/test_grid2d.cpp
         src/FiniteDifference2D.h
-        test_finitedifference2d.cpp
+        tests/test_finitedifference2d.cpp
         # Future source files will be added here if headers have implementations:
         # src/Grid2D.cpp
         # src/Phi2D.cpp
@@ -74,17 +74,17 @@ target_compile_features(heat_solver PRIVATE cxx_std_20)
 
 # Test executable
 add_executable(test_array2d
-        test_array2d.cpp
+        tests/test_array2d.cpp
         src/Array2D.h)
 
 # Test executable
 add_executable(test_grid2d
-        test_grid2d.cpp
+        tests/test_grid2d.cpp
         src/Grid2D.h)
 
 # Test executable
 add_executable(test_finite_difference2d
-        test_finitedifference2d.cpp
+        tests/test_finitedifference2d.cpp
         src/FiniteDifference2D.h)
 
 target_compile_features(test_array2d PRIVATE cxx_std_20)
