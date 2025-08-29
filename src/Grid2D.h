@@ -21,7 +21,7 @@
 
 template<typename T>
 class Grid2D {
-    static_assert(std::is_floating_point<T>::v, "Grid2D<T>: T must be floating-point type.");
+    static_assert(std::is_floating_point<T>::value, "Grid2D<T>: T must be floating-point type.");
 
 public:
     using size_type = std::size_t;
