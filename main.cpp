@@ -1,145 +1,173 @@
 /**
  * @file main.cpp
- * @brief Heat Equation Solver on Irregular Domains using Cartesian Grids
- * 
- * This project implements a numerical solver for the heat equation on complex,
- * irregular domains using Cartesian grid methods combined with level-set functions
- * to handle boundary conditions.
- * 
- * @section overview Mathematical Overview
- * 
- * The heat equation is a partial differential equation that describes the 
- * distribution of heat (or temperature variation) in a given region over time:
- * 
- *   ∂u/∂t = α∇²u + f(x,y,t)
- * 
- * where:
- *   - u(x,y,t) is the temperature field
- *   - α is the thermal diffusivity constant
- *   - ∇² is the Laplace operator (∂²/∂x² + ∂²/∂y²)
- *   - f(x,y,t) is a source/sink term
- * 
- * @section architecture Software Architecture
- * 
- * The solver is organized into modular components:
- * 
- * 1. **Array2D.h** - Foundation data structure
- *    - Efficient 2D matrix representation with row-major storage
- *    - Basic linear algebra operations (transpose, inverse, solve)
- *    - Arithmetic operators for element-wise and matrix operations
- * 
- * 2. **grid2D.h** - Cartesian Grid Generation [TO BE IMPLEMENTED]
- *    - Creates uniform/non-uniform Cartesian meshes
- *    - Handles grid spacing (dx, dy) and domain bounds
- *    - Provides grid point coordinates and connectivity
- * 
- * 3. **gradient2D.h** - Gradient Computation [TO BE IMPLEMENTED]
- *    - First-order spatial derivatives using finite differences
- *    - Central, forward, and backward difference schemes
- *    - Higher-order accurate stencils for smooth solutions
- * 
- * 4. **laplace2D.h** - Laplacian Operator [TO BE IMPLEMENTED]
- *    - Second-order spatial derivatives (∇²)
- *    - 5-point and 9-point stencils
- *    - Handles irregular boundaries via ghost cells
- * 
- * 5. **phi2D.h** - Level Set Functions [TO BE IMPLEMENTED]
- *    - Implicit representation of irregular domains
- *    - φ(x,y) < 0 inside domain, φ(x,y) > 0 outside
- *    - Signed distance functions for common shapes
- *    - Boolean operations on level sets (union, intersection)
- * 
- * 6. **integration2D.h** - Time Integration Schemes [TO BE IMPLEMENTED]
- *    - Explicit methods: Forward Euler, Runge-Kutta
- *    - Implicit methods: Backward Euler, Crank-Nicolson
- *    - Adaptive time stepping for stability
- * 
- * 7. **boundary2D.h** - Boundary Conditions [TO BE IMPLEMENTED]
- *    - Dirichlet (fixed temperature)
- *    - Neumann (fixed heat flux)
- *    - Robin (mixed/convective)
- *    - Periodic boundaries
- *    - Embedded boundary method for irregular domains
- * 
- * 8. **linear_solver2D.h** - Linear System Solvers [TO BE IMPLEMENTED]
- *    - Direct solvers for small systems
- *    - Iterative methods: Jacobi, Gauss-Seidel, SOR
- *    - Conjugate gradient for symmetric positive definite systems
- *    - Preconditioners for faster convergence
- * 
- * 9. **examples2D.h** - Example Bank [TO BE IMPLEMENTED]
- *    - Initial temperature distributions (Gaussian, step, random)
- *    - Analytical solutions for validation
- *    - Complex domain shapes (circles, stars, letters)
- *    - Heat source patterns (point sources, moving sources)
- * 
- * @section workflow Typical Workflow
- * 
- * 1. Define computational domain and generate grid (grid2D)
- * 2. Create level set function for irregular boundary (phi2D)
- * 3. Set initial conditions and boundary conditions (examples2D, boundary2D)
- * 4. Discretize spatial operators (gradient2D, laplace2D)
- * 5. Time-march the solution (integration2D)
- * 6. Solve linear systems if using implicit schemes (linear_solver2D)
- * 7. Visualize and analyze results
- * 
- * @section usage Example Usage
+ * @brief Heat Equation and Stefan Problem Solver using Level Set Methods
+ *
+ * This project implements numerical solvers for Poisson equation, heat equation,
+ * and Stefan problems on irregular domains using Cartesian grids with level set
+ * methods for interface tracking and ghost fluid methods for boundary conditions.
+ *
+ * @section overview Mathematical Problems Solved
+ *
+ * 1. Poisson Equation: ∇·(β∇u) = f
+ * 2. Heat Equation: ∂u/∂t = α∇²u + f(x,y,t)
+ * 3. Stefan Problem: Moving boundary problems with phase change
+ *    - Interface condition: T = T_melt
+ *    - Jump condition: [k∇T·n] = ρL·V_n
+ *
+ * @section architecture Layered Software Architecture
+ *
+ * LAYER 1: CORE DATA STRUCTURES
+ * ==============================
+ * 1. **Array2D.h** - Foundation data structure [IMPLEMENTED]
+ *    - Efficient 2D matrix with row-major storage
+ *    - Basic linear algebra operations
+ *
+ * 2. **Grid2D.h** - Uniform Cartesian grid [IMPLEMENTED]
+ *    - Grid generation and coordinate mapping
+ *    - Meshgrid functions for x,y coordinates
+ *
+ * LAYER 2: PURE MATHEMATICAL OPERATORS (No BC knowledge)
+ * ========================================================
+ * 3. **FiniteDifference2D.h** - Spatial discretization operators
+ *    - gradient(), laplacian_interior(), divergence()
+ *    - forward_diff(), backward_diff(), central_diff()
+ *    - weno5(), eno3() for high-resolution schemes
+ *    - mean_curvature() for level set operations
+ *
+ * LAYER 3: DOMAIN MANAGEMENT
+ * ===========================
+ * 4. **LevelSet2D.h** - Interface representation and evolution
+ *    - Signed distance functions for shapes (circle, rectangle, star)
+ *    - Interface advection: ∂φ/∂t + V·∇φ = 0
+ *    - Reinitialization: ∂φ/∂τ + S(φ₀)(|∇φ| - 1) = 0
+ *    - Boolean operations on level sets
+ *
+ * 5. **DomainDecomposition2D.h** - Multi-region management
+ *    - classify_point(i,j): INSIDE/OUTSIDE/CUT_CELL
+ *    - Track disconnected regions
+ *    - Material property assignment per region
+ *
+ * LAYER 4: BOUNDARY CONDITION HANDLING
+ * =====================================
+ * 6. **BoundaryConditionManager2D.h** - Unified BC management
+ *    ├── ComputationalDomainBC - Outer rectangle boundaries
+ *    │   - Dirichlet, Neumann, Robin, Periodic
+ *    │   - Time-dependent BC support
+ *    ├── InterfaceBC - Level set φ=0 contour
+ *    │   - Jump conditions for Stefan problems
+ *    │   - Ghost fluid method implementation
+ *    └── CutCellHandler - Fractional cell treatment
+ *        - Symmetric discretization (Gibou et al.)
+ *        - Small cut cell handling (θ threshold)
+ *
+ * LAYER 5: LINEAR ALGEBRA
+ * ========================
+ * 7. **SparseMatrix2D.h** - Sparse matrix for implicit schemes
+ *    - CSR/CSC format for efficiency
+ *    - Symmetric matrix specialization
+ *
+ * 8. **LinearSolver2D.h** - System solvers
+ *    - Direct: Gauss elimination for small systems
+ *    - Iterative: PCG for symmetric positive definite
+ *    - Preconditioners: Incomplete Cholesky, Jacobi
+ *
+ * LAYER 6: TIME INTEGRATION
+ * ==========================
+ * 9. **TimeIntegration2D.h** - Temporal discretization
+ *    - Explicit: Forward Euler, RK2, RK4
+ *    - Implicit: Backward Euler, Crank-Nicolson
+ *    - Adaptive time stepping with CFL condition
+ *
+ * LAYER 7: PROBLEM-SPECIFIC SOLVERS
+ * ==================================
+ * 10. **PoissonSolver2D.h** - Steady state problems
+ *     - Handles irregular domains via cut cells
+ *     - Variable coefficient β(x,y)
+ *
+ * 11. **HeatSolver2D.h** - Parabolic PDEs
+ *     - Builds on PoissonSolver2D
+ *     - Explicit/implicit time marching
+ *
+ * 12. **StefanSolver2D.h** - Free boundary problems
+ *     - Two-phase heat equation
+ *     - Interface velocity from jump conditions
+ *     - Coupled level set evolution
+ *
+ * LAYER 8: UTILITIES
+ * ===================
+ * 13. **Examples2D.h** - Test cases and initial conditions
+ *     - Analytical solutions for validation
+ *     - Common initial profiles (Gaussian, step)
+ *     - Standard domain shapes
+ *
+ * 14. **Visualization2D.h** - Output and debugging
+ *     - VTK file export
+ *     - Console visualization for small grids
+ *
+ * @section workflow Stefan Problem Workflow
+ *
+ * Time step n → n+1:
+ * 1. Compute ∇T at interface using current φⁿ
+ * 2. Calculate interface velocity: V_n = [k∇T·n]/ρL
+ * 3. Advect level set: φⁿ⁺¹ = advect(φⁿ, V_n, dt)
+ * 4. Update material properties based on φⁿ⁺¹
+ * 5. Solve heat equation with interface BC → Tⁿ⁺¹
+ * 6. Repeat
+ *
+ * @section examples Example Usage
  * @code
- * // Create a 100x100 grid on [-1,1] x [-1,1]
- * Grid2D grid(100, 100, -1.0, 1.0, -1.0, 1.0);
- * 
- * // Define circular domain with radius 0.8
- * Phi2D phi = Phi2D::circle(grid, 0.0, 0.0, 0.8);
- * 
- * // Set initial temperature (Gaussian bump)
- * Array2D<double> u = Examples2D::gaussian(grid, 0.0, 0.0, 0.2);
- * 
- * // Apply Dirichlet BC (u=0 on boundary)
- * Boundary2D bc(BoundaryType::DIRICHLET, 0.0);
- * 
- * // Solve heat equation with α=0.1
- * HeatSolver solver(grid, phi, bc, 0.1);
- * solver.solve(u, dt=0.001, t_final=1.0);
+ * // Setup
+ * Grid2D<double> grid(100, 100, -1.0, 1.0, -1.0, 1.0);
+ * LevelSet2D<double> phi = LevelSet2D<double>::circle(grid, 0.0, 0.0, 0.3);
+ *
+ * // Boundary conditions
+ * BoundaryConditionManager2D<double> bc_manager;
+ * bc_manager.set_outer_bc(BoundaryType::DIRICHLET, 0.0);  // T=0 at edges
+ * bc_manager.set_interface_bc(BoundaryType::DIRICHLET, 1.0);  // T=1 at φ=0
+ *
+ * // Solve Poisson first
+ * PoissonSolver2D<double> poisson;
+ * Array2D<double> u = poisson.solve(f, beta, phi, grid, bc_manager);
+ *
+ * // Then heat equation
+ * HeatSolver2D<double> heat(alpha);
+ * u = heat.solve(u_initial, phi, grid, bc_manager, dt, t_final);
+ *
+ * // Finally Stefan problem
+ * StefanSolver2D<double> stefan(latent_heat, k_solid, k_liquid);
+ * stefan.solve(T_initial, phi, grid, bc_manager, dt, t_final);
  * @endcode
- * 
- * @author Your Name
+ *
+ * @author Faranak Rajabi
  * @date 2025
- * @version 1.0
+ * @version 2.0
  */
 
 #include <iostream>
 #include <vector>
 #include "src/Array2D.h"
+#include "src/Grid2D.h"
+// #include "src/FiniteDifference2D.h"  // To be implemented next
 
 int main() {
-    std::cout << "Heat Equation Solver - Development Version\n";
-    std::cout << "==========================================\n\n";
-    
-    // TODO: Once all modules are implemented, the main workflow will be:
-    
-    // 1. Setup computational domain
-    // Grid2D grid(nx=100, ny=100, xmin=-1, xmax=1, ymin=-1, ymax=1);
-    
-    // 2. Define irregular boundary using level set
-    // Phi2D phi = Phi2D::circle(grid, cx=0, cy=0, radius=0.8);
-    
-    // 3. Set initial condition
-    // Array2D<double> u = Examples2D::gaussian(grid, cx=0, cy=0, sigma=0.2);
-    
-    // 4. Define boundary conditions
-    // Boundary2D bc(BoundaryType::DIRICHLET, value=0.0);
-    
-    // 5. Create heat equation solver
-    // HeatSolver solver(grid, phi, bc, alpha=0.1);
-    
-    // 6. Time integration
-    // solver.solve(u, dt=0.001, t_final=1.0);
-    
-    // 7. Output results
-    // solver.save_vtk("heat_solution.vtk");
+    std::cout << "Level Set Method Solver for Heat and Stefan Problems\n";
+    std::cout << "====================================================\n\n";
 
-    auto i{std::round(0.6/0.25)};
-    std::cout << i << "vs" << (0.6/0.25) << "\n";
+    // Phase 1: Test Poisson on regular domain
+    std::cout << "Phase 1: Testing basic operators...\n";
+    Grid2D<double> grid(50, 50, -1.0, 1.0, -1.0, 1.0);
+    std::cout << "Created " << grid.nx() << "x" << grid.ny()
+              << " grid on [" << grid.xmin() << "," << grid.xmax()
+              << "] x [" << grid.ymin() << "," << grid.ymax() << "]\n";
+
+    // Phase 2: Test Poisson with circular boundary
+    // TODO: After implementing LevelSet2D
+
+    // Phase 3: Heat equation
+    // TODO: After implementing TimeIntegration2D
+
+    // Phase 4: Stefan problem
+    // TODO: After implementing StefanSolver2D
     
     return 0;
 }
